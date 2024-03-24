@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v7.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v7.0": {
+      "Bruckel.MongoDB.Performance.Test/1.0.0": {
+        "runtime": {
+          "Bruckel.MongoDB.Performance.Test.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Bruckel.MongoDB.Performance.Test/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

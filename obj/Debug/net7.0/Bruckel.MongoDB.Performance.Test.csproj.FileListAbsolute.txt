@@ -1,0 +1,15 @@
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/bin/Debug/net7.0/Bruckel.MongoDB.Performance.Test
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/bin/Debug/net7.0/Bruckel.MongoDB.Performance.Test.deps.json
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/bin/Debug/net7.0/Bruckel.MongoDB.Performance.Test.runtimeconfig.json
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/bin/Debug/net7.0/Bruckel.MongoDB.Performance.Test.dll
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/bin/Debug/net7.0/Bruckel.MongoDB.Performance.Test.pdb
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.csproj.AssemblyReference.cache
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.GeneratedMSBuildEditorConfig.editorconfig
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.AssemblyInfoInputs.cache
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.AssemblyInfo.cs
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.csproj.CoreCompileInputs.cache
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.dll
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/refint/Bruckel.MongoDB.Performance.Test.dll
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.pdb
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/Bruckel.MongoDB.Performance.Test.genruntimeconfig.cache
+/Users/tomas/Projects/Bruckel.MongoDB/Bruckel.MongoDB.Performance.Test/obj/Debug/net7.0/ref/Bruckel.MongoDB.Performance.Test.dll
