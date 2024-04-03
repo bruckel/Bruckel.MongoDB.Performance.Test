@@ -1,4 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 var beginDate = new DateTime(2024, 1, 1, 0, 0, 0);
 var endDate = new DateTime(2024, 12, 31, 23, 0, 0);
@@ -22,6 +24,27 @@ var coefficients = cups.SelectMany(c => hours.Select(h => new Coefficient
 }));
 
 Console.WriteLine(coefficients.Count());
+
+const string connectionUri = "mongodb+srv://tomas:Cantabria30011978@cluster0.rowja.azure.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+var settings = MongoClientSettings.FromConnectionString(connectionUri);
+
+// Set the ServerApi field of the settings object to set the version of the Stable API on the client
+settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+
+// Create a new client and connect to the server
+var client = new MongoClient(settings);
+
+// Send a ping to confirm a successful connection
+try 
+{
+    var collection = client.GetDatabase("Tempelhof").GetCollection<BsonDocument>("LegoBricks");
+    Console.WriteLine($"You successfully connected to MongoDB!");
+} 
+    catch (Exception ex) 
+{
+    Console.WriteLine(ex);
+}
 
 internal class Coefficient
 {
