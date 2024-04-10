@@ -1,4 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using System.Diagnostics;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -23,7 +24,23 @@ var coefficients = cups.SelectMany(c => hours.Select(h => new Coefficient
     Value = random.NextDouble()
 }));
 
-Console.WriteLine(coefficients.Count());
+var batches = new List<List<Coefficient>>();
+var batchSize = 1000;
+var count = 0;
+
+do
+{
+    var batch = coefficients.Skip(count).Take(batchSize).ToList();
+    if (batch.Any())
+    {
+        batches.Add(batch);
+        count += batchSize;
+    }
+}
+while (batches.SelectMany(b => b.Select(s => s)).Count() < coefficients.Count());
+
+var watch = new Stopwatch();
+watch.Start();
 
 const string connectionUri = "mongodb+srv://tomas:Cantabria30011978@cluster0.rowja.azure.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -34,23 +51,23 @@ settings.ServerApi = new ServerApi(ServerApiVersion.V1);
 
 // Create a new client and connect to the server
 var client = new MongoClient(settings);
-
-// Send a ping to confirm a successful connection
-try 
+var collection = client.GetDatabase("Tempelhof").GetCollection<Coefficient>("FacilityCoefficients");
+if (collection is not null)
 {
-    var collection = client.GetDatabase("Tempelhof").GetCollection<BsonDocument>("LegoBricks");
-    Console.WriteLine($"You successfully connected to MongoDB!");
-} 
-    catch (Exception ex) 
-{
-    Console.WriteLine(ex);
+    foreach (var batch in batches)
+    {
+        await collection.InsertManyAsync(batch);
+        Console.WriteLine($"Elapsed time: {watch.ElapsedMilliseconds}");
+    }
 }
+
+Console.WriteLine("Finished");
 
 internal class Coefficient
 {
-    public required DateTime TimeStamp { get; set; } 
-    
-    public required string Cups { get; set; } 
+    public required DateTime TimeStamp { get; set; }
 
-    public required double Value { get; set; } 
+    public required string Cups { get; set; }
+
+    public required double Value { get; set; }
 }
