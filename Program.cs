@@ -1,89 +1,155 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 
-var beginDate = new DateTime(2024, 1, 1, 0, 0, 0);
-var endDate = new DateTime(2024, 12, 31, 23, 0, 0);
+var referenceDay = DateTime.Today.AddMonths(-1);
+
+var beginDate = new DateTime(referenceDay.AddYears(-1).Year, referenceDay.AddMonths(1).Month, 1);
+var endDate = new DateTime(referenceDay.Year, referenceDay.Month, DateTime.DaysInMonth(referenceDay.Year, referenceDay.Month));
 
 var hours = Enumerable.Range(0, (int)(endDate - beginDate).TotalHours + 1).Select(d => beginDate.AddHours(d));
 
 var random = new Random();
 
-var cups = new List<string>();
-do
+// Legacy: como crear CUPS de manera totalmente aleatoria *//
+//var cups = new List<string>();
+//do
+//{
+//    cups.Add($"ES{random.Next(1000, 10000)}{random.Next(10000000, 100000000)}{random.Next(10000000, 100000000)}{(char)random.Next('A', 'Z' + 1)}{(char)random.Next('A', 'Z' + 1)}{random.Next(0, 9)}{(char)random.Next('A', 'Z' + 1)}");
+//}
+//while (cups.Count < 100);
+
+// Creamos un conjunto para almacenar los números generados
+var cups = new HashSet<int>();
+while (cups.Count < 100)
 {
-    cups.Add($"ES{random.Next(1000, 10000)}{random.Next(10000000, 100000000)}{random.Next(10000000, 100000000)}{(char)random.Next('A', 'Z' + 1)}{(char)random.Next('A', 'Z' + 1)}{random.Next(0, 9)}{(char)random.Next('A', 'Z' + 1)}");
+    int numero = random.Next(1, 101);
+    if (!cups.Contains(numero)) cups.Add(numero);
 }
-while (cups.Count < 100);
 
 var coefficients = cups.SelectMany(c => hours.Select(h => new CoefficientTimeStamp
 {
     TimeStamp = h.ToUniversalTime(),
-    Metadata = new CoefficientMetadata { Cups = c},
+    Metadata = new CoefficientMetadata
+    {
+        IdPeriod = c
+    },
     Value = random.NextDouble()
 }));
 
-var batches = new List<List<CoefficientTimeStamp>>();
-var batchSize = 1000;
-var count = 0;
-
-do
-{
-    var batch = coefficients.Skip(count).Take(batchSize).ToList();
-    if (batch.Any())
-    {
-        batches.Add(batch);
-        count += batchSize;
-    }
-}
-while (batches.SelectMany(b => b.Select(s => s)).Count() < coefficients.Count());
+var hours1 = hours.Count();
+var temp1 = coefficients.Count();
 
 var watch = new Stopwatch();
 watch.Start();
 
-//const string connectionUri = "mongodb+srv://tomas:Cantabria30011978@cluster0.rowja.azure.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-var settings = MongoClientSettings.FromConnectionString("mongodb://root:root@localhost:27777/?directConnection=true");
-
-// Set the ServerApi field of the settings object to set the version of the Stable API on the client
+var settings = MongoClientSettings.FromConnectionString("mongodb://root:bruckel@localhost:27778/?directConnection=true");
 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
-
-var seconds = 0.0;
+settings.LinqProvider = LinqProvider.V3;
 
 var client = new MongoClient(settings);
 var database = client.GetDatabase("temp");
-var hasCollection = database.ListCollectionNames().ToList().Any(l => l == "coefficients");
+var collections = database.ListCollectionNames().ToList();
+
+var hasCollection = collections.Any(l => l == "coefficients");
 if (!hasCollection)
 {
-    database.CreateCollection("coefficients", new CreateCollectionOptions { TimeSeriesOptions = new TimeSeriesOptions(timeField: "TimeStamp", metaField: "Metadata", granularity: TimeSeriesGranularity.Hours) });
-    var newCollection = database.GetCollection<CoefficientTimeStamp>("coefficients");
-    
-    foreach (var batch in batches)
+    var createCollectionOptions = new CreateCollectionOptions
     {
-        await newCollection.InsertManyAsync(batch);
-        seconds += watch.ElapsedMilliseconds/1000;
-        Console.WriteLine($"Elapsed time: {watch.ElapsedMilliseconds/1000}");
-    }
+        TimeSeriesOptions = new TimeSeriesOptions(timeField: "TimeStamp", metaField: "Metadata", granularity: TimeSeriesGranularity.Hours)
+    };
+
+    database.CreateCollection("coefficients", createCollectionOptions);
+    
+    var newCollection = database.GetCollection<CoefficientTimeStamp>("coefficients");
+
+    var indexModel = new CreateIndexModel<CoefficientTimeStamp>(keys: Builders<CoefficientTimeStamp>.IndexKeys.Ascending(i => i.TimeStamp));
+
+    //* Prueba de concepto de óndices y TTL *//
+    // var indexModel = new CreateIndexModel<CoefficientTimeStamp>(keys: Builders<CoefficientTimeStamp>.IndexKeys.Ascending(i => i.TimeStamp),
+    // options: new CreateIndexOptions<CoefficientTimeStamp>
+    // {
+    //    ExpireAfter = TimeSpan.FromSeconds(0),
+    //    PartialFilterExpression = Builders<CoefficientTimeStamp>.Filter.Eq(i => i.Metadata.IsExpired, true)
+    // });
+
+    newCollection.Indexes.CreateOne(indexModel);
 }
 
-//var collection = database.GetCollection<CoefficientTimeStamp>("coefficients");
-//await collection.InsertManyAsync(batches.SelectMany(b => b));
-//Console.WriteLine($"Elapsed time: {watch.ElapsedMilliseconds/1000}");
+var collection = database.GetCollection<CoefficientTimeStamp>("coefficients");
+await collection.InsertManyAsync(coefficients, new InsertManyOptions { IsOrdered = false });
 
-// Create a new client and connect to the server
-/*var client = new MongoClient(settings);
-var collection = client.GetDatabase("Tempelhof").GetCollection<Coefficient>("FacilityCoefficients");
-if (collection is not null)
+Console.WriteLine($"Insert Finish time: {watch.ElapsedMilliseconds}");
+watch.Restart();
+
+var pipeline = new[]
 {
-    foreach (var batch in batches)
+    new BsonDocument
     {
-        await collection.InsertManyAsync(batch);
-        Console.WriteLine($"Elapsed time: {watch.ElapsedMilliseconds}");
+        {
+            "$addFields", new BsonDocument
+            {
+                {
+                    "TimeStamp", new BsonDocument
+                    {
+                        {
+                            "$dateToParts", new BsonDocument
+                            {
+                                { "date", "$TimeStamp" },
+                                { "timezone", "+01:00" }
+                            }
+                        }
+                    }
+                }
+                
+            }
+        }
+    },
+    new BsonDocument
+    {
+        {
+            "$group", new BsonDocument
+            {
+                {
+                    "_id", new BsonDocument
+                    {
+                        { "year", "$TimeStamp.year" },
+                        { "month", "$TimeStamp.month" }
+                    }
+                },
+                { "Value", new BsonDocument { { "$sum", "$Value" } } }
+            }
+        }
+    },
+    new BsonDocument
+    {
+        {
+            "$merge", new BsonDocument
+            {
+                { "into", "coefficientsMonth" },
+                { "whenMatched", "replace" }
+            }
+        }
     }
-}*/
+};
 
-Console.WriteLine($"Finish time: {seconds}");
+var result = collection.Aggregate<BsonDocument>(pipeline).ToList();
+
+Console.WriteLine($"Aggregate Finish time: {watch.ElapsedMilliseconds}");
+
+watch.Restart();
+
+//hasCollection = collections.Any(l => l == "coefficientsMonth");
+//if (!hasCollection)
+//{
+//    database.CreateView<BsonDocument, BsonDocument>("coefficientsMonth", "coefficients", pipeline);
+//}
+
+var viewCollection = database.GetCollection<BsonDocument>("coefficientsMonth");
+var values = viewCollection.Find(Builders<BsonDocument>.Filter.Empty).ToCursor();
+
+Console.WriteLine($"View Find time: {watch.ElapsedMilliseconds}");
 
 internal class CoefficientTimeStamp
 {
@@ -96,5 +162,5 @@ internal class CoefficientTimeStamp
 
 internal class CoefficientMetadata
 {
-    public required string Cups { get; set; }
+    public required int IdPeriod { get; set; }
 }
