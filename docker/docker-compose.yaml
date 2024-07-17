@@ -1,0 +1,10 @@
+services:
+  mongo:
+    image: mongodb/atlas
+    privileged: true
+    command: |
+      /bin/bash -c "atlas deployments setup --type local --port 27778 --bindIpAll --currentIp --username root --password 123456789 --force --tier M10 && tail -f /dev/null"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 27778:27778
